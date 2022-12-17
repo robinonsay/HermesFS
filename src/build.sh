@@ -28,6 +28,8 @@ abspath()
 
 PROJECT_DIR=$(abspath ../)
 
+rm ${PROJECT_DIR}/out/manifest
+
 for lib in $(ls -d libs/*); do
     cd ${lib} && ./build.sh -o ${PROJECT_DIR}/out
     STATUS=$?
@@ -35,5 +37,45 @@ for lib in $(ls -d libs/*); do
     if [ ${STATUS} -ne 0 ]; then
         exit 1
     fi
+done
+
+source ${PROJECT_DIR}/mission.conf
+STATUS=$?
+if [[ ${STATUS} -ne 0 ]]; then
+    echo -e "${BOLD_RED}ERRORcould not source conf file${RESET}"
+    exit ${STATUS}
+fi
+for app_path in $MANIFEST; do
+    build_path=${app_path}/src/build.sh
+    if ! [[ -f ${build_path} ]]; then
+        echo -e "${BOLD_RED}ERROR: Could not find build script ${build_path}${RESET}"
+        exit 1
+    fi
+    cd $(dirname ${build_path}) && ./$(basename ${build_path})
+    cd ${PROJECT_DIR}/src
+done
+
+SOURCES="${PROJECT_DIR}/src/litefs.linux.c"
+OBJS=$(ls ${PROJECT_DIR}/out/*.o)
+OUT="${PROJECT_DIR}/out/litefs"
+INCLUDES="-I${PROJECT_DIR}/src"
+COMPILE_FLAGS="--debug -std=gnu99 -pedantic -Werror"
+LINKER_FLAGS=
+LINKER_DIRS=
+LINKER_LIBS="-ldl"
+DEFINES=
+echo -e ${BOLD_BLUE}~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~${RESET}
+echo -e ${BOLD_GREEN}Building LiteFS...${RESET}
+gcc ${COMPILE_FLAGS} ${DEFINES} ${INCLUDES} -fPIC -o ${OUT} ${SOURCES} ${OBJS} ${LINKER_FLAGS} ${LINKER_DIRS} ${LINKER_LIBS}
+STATUS=$?
+if [ ${STATUS} -ne 0 ]; then
+    echo -e ${BOLD_RED}Build FAILED${RESET}
+    exit 1
+fi
+echo -e ${BOLD_CYAN}Build Info:${RESET}
+echo -e "\t${CYAN}EXE OUT: ${YELLOW}${OUT}${RESET}"
+for lib in $(ls ${PROJECT_DIR}/out/*/*.so); do
+    lib_path=$(abspath $(dirname ${lib}))
+    echo ${lib_path}/$(basename ${lib}) >> ${PROJECT_DIR}/out/manifest
 done
 
