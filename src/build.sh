@@ -30,7 +30,10 @@ PROJECT_DIR=$(abspath ../)
 
 rm ${PROJECT_DIR}/out/manifest
 
-for lib in $(ls -d libs/*); do
+SRCS="$(ls -d libs/*)"
+SRCS+=" $(ls -d core/*)"
+
+for lib in ${SRCS}; do
     cd ${lib} && ./build.sh -o ${PROJECT_DIR}/out
     STATUS=$?
     cd ${PROJECT_DIR}/src
