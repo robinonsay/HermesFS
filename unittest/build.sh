@@ -1,3 +1,6 @@
+#!/bin/bash
+CC="gcc"
+
 RESET="\033[0m"
 BLACK="\033[0;30m"
 RED="\033[0;31m"
@@ -53,7 +56,7 @@ EXE_DEFINES=
 echo -e ${YELLOW}~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~${RESET}
 echo -e "${BOLD_GREEN}Building ${GREEN}(${EXE_NAME})${BOLD_GREEN}...${RESET}"
 
-gcc ${EXE_COMPILE_FLAGS} ${EXE_DEFINES} ${EXE_INCLUDES} -fPIC -o ${OUT} ${EXE_SOURCES} ${OBJS} ${EXE_LINKER_FLAGS} ${EXE_LINKER_DIRS} ${EXE_LINKER_LIBS}
+${CC} ${EXE_COMPILE_FLAGS} ${EXE_DEFINES} ${EXE_INCLUDES} -fPIC -o ${OUT} ${EXE_SOURCES} ${OBJS} ${EXE_LINKER_FLAGS} ${EXE_LINKER_DIRS} ${EXE_LINKER_LIBS}
 STATUS=$?
 if [[ ${STATUS} -ne 0 ]]; then
     echo -e ${BOLD_RED}Build FAILED${RESET}
