@@ -97,14 +97,44 @@ int LiteFS_HmapSet(LITEFS_HMAP_T* hmapPtr, void* keyPtr, unsigned long ulKeySize
     {
         goto exit;
     }
-    currItemPtr->nextItemPtr = &hmapPtr->itemTbl[ulTableIndex];
-    currItemPtr->nextItemPtr->ulKeyHash = ulHash;
-    currItemPtr->nextItemPtr->vValuePtr = valPtr;
-    currItemPtr->nextItemPtr->nextItemPtr = NULL;
+    if (currItemPtr == &hmapPtr->itemTbl[ulTableIndex])
+    {
+        currItemPtr->ulKeyHash = ulHash;
+        currItemPtr->vValuePtr = valPtr;
+        currItemPtr->nextItemPtr = NULL;
+        currItemPtr->prevItemPtr = NULL;
+    }
+    else
+    {
+        hmapPtr->itemTbl[ulTableIndex].ulKeyHash = ulHash;
+        hmapPtr->itemTbl[ulTableIndex].vValuePtr = valPtr;
+        hmapPtr->itemTbl[ulTableIndex].nextItemPtr = NULL;
+        hmapPtr->itemTbl[ulTableIndex].prevItemPtr = currItemPtr;
+        currItemPtr->nextItemPtr = &hmapPtr->itemTbl[ulTableIndex];
+    }
     hmapPtr->state.ulLen++;
     hmapPtr->state.ulSize += sizeof(LITEFS_HMAP_ITEM_T);
 exit:
     return iStatus;
+}
+
+void LiteFS_HmapRemove(LITEFS_HMAP_T* hmapPtr, void* keyPtr, unsigned long ulKeySize)
+{
+    LITEFS_HMAP_ITEM_T* itemPtr = LiteFS_HmapGet(hmapPtr, keyPtr, ulKeySize);
+    LITEFS_HMAP_ITEM_T* prevItemPtr = itemPtr->prevItemPtr;
+    LITEFS_HMAP_ITEM_T* nextItemPtr = itemPtr->nextItemPtr;
+    itemPtr->ulKeyHash = 0;
+    itemPtr->vValuePtr = NULL;
+    itemPtr->nextItemPtr = NULL;
+    itemPtr->prevItemPtr = NULL;
+    if(prevItemPtr != NULL)
+    {
+        prevItemPtr->nextItemPtr = nextItemPtr;
+    }
+    if(nextItemPtr != NULL)
+    {
+        nextItemPtr->prevItemPtr = prevItemPtr;
+    }
 }
 
 /* https://wiki.osdev.org/CRC32 */

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+CC="gcc"
+
 RESET="\033[0m"
 BLACK="\033[0;30m"
 RED="\033[0;31m"
@@ -32,7 +34,9 @@ rm ${PROJECT_DIR}/out/manifest
 
 SRCS="$(ls -d libs/*)"
 SRCS+=" $(ls -d core/*)"
-
+echo -e ${BOLD_PURPLE}------------------------------------------------------------------------------------${RESET}
+echo -e ${BOLD_PURPLE}Building LiteFS Libs...${RESET}
+echo -e ${BOLD_PURPLE}------------------------------------------------------------------------------------${RESET}
 for lib in ${SRCS}; do
     cd ${lib} && ./build.sh -o ${PROJECT_DIR}/out
     STATUS=$?
@@ -48,6 +52,9 @@ if [[ ${STATUS} -ne 0 ]]; then
     echo -e "${BOLD_RED}ERRORcould not source conf file${RESET}"
     exit ${STATUS}
 fi
+echo -e ${BOLD_PURPLE}------------------------------------------------------------------------------------${RESET}
+echo -e ${BOLD_PURPLE}Building Apps...${RESET}
+echo -e ${BOLD_PURPLE}------------------------------------------------------------------------------------${RESET}
 for app_path in $MANIFEST; do
     build_path=${app_path}/src/build.sh
     if ! [[ -f ${build_path} ]]; then
@@ -55,6 +62,10 @@ for app_path in $MANIFEST; do
         exit 1
     fi
     cd $(dirname ${build_path}) && ./$(basename ${build_path})
+    STATUS=$?
+    if [[ ${STATUS} -ne 0 ]]; then
+        exit 1
+    fi
     cd ${PROJECT_DIR}/src
 done
 
@@ -62,14 +73,16 @@ SOURCES="${PROJECT_DIR}/src/litefs.linux.c"
 OBJS=$(ls ${PROJECT_DIR}/out/*.o)
 OUT="${PROJECT_DIR}/out/litefs"
 INCLUDES="-I${PROJECT_DIR}/src"
+INCLUDES+=" -I${PROJECT_DIR}/api"
 COMPILE_FLAGS="--debug -std=gnu99 -pedantic -Werror"
 LINKER_FLAGS=
 LINKER_DIRS=
 LINKER_LIBS="-ldl"
 DEFINES=
-echo -e ${BOLD_BLUE}~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~${RESET}
-echo -e ${BOLD_GREEN}Building LiteFS...${RESET}
-gcc ${COMPILE_FLAGS} ${DEFINES} ${INCLUDES} -fPIC -o ${OUT} ${SOURCES} ${OBJS} ${LINKER_FLAGS} ${LINKER_DIRS} ${LINKER_LIBS}
+echo -e ${BOLD_PURPLE}------------------------------------------------------------------------------------${RESET}
+echo -e ${BOLD_PURPLE}Building LiteFS...${RESET}
+echo -e ${BOLD_PURPLE}------------------------------------------------------------------------------------${RESET}
+${CC} ${COMPILE_FLAGS} ${DEFINES} ${INCLUDES} -fPIC -o ${OUT} ${SOURCES} ${OBJS} ${LINKER_FLAGS} ${LINKER_DIRS} ${LINKER_LIBS}
 STATUS=$?
 if [ ${STATUS} -ne 0 ]; then
     echo -e ${BOLD_RED}Build FAILED${RESET}
