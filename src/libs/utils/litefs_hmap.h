@@ -9,6 +9,7 @@ typedef struct LITEFS_HMAP_ITEM_TAG
     unsigned long                   ulKeyHash;
     void*                           vValuePtr;
     struct LITEFS_HMAP_ITEM_TAG*    nextItemPtr;
+    struct LITEFS_HMAP_ITEM_TAG*    prevItemPtr;
 } LITEFS_HMAP_ITEM_T;
 
 typedef struct LITEFS_HMAP_TAG
@@ -26,6 +27,7 @@ typedef struct LITEFS_HMAP_TAG
 void LiteFS_HmapInit(LITEFS_HMAP_T* hmapPtr, LITEFS_HMAP_ITEM_T itemTbl[], unsigned long ulItemTblSize);
 void* LiteFS_HmapGet(LITEFS_HMAP_T* hmapPtr, void* keyPtr, unsigned long ulKeySize);
 int LiteFS_HmapSet(LITEFS_HMAP_T* hmapPtr, void* keyPtr, unsigned long ulKeySize, void* valPtr);
+void LiteFS_HmapRemove(LITEFS_HMAP_T* hmapPtr, void* keyPtr, unsigned long ulKeySize);
 unsigned long LiteFS_HashStr(char* str);
 unsigned long LiteFS_HashArr(unsigned char byteArr[], unsigned long ulByteArrSize);
 

@@ -1,4 +1,5 @@
 #include "litefs.h"
+#include "litefsapp.h"
 #include <dlfcn.h>
 #include <unistd.h>
 #include <string.h>
@@ -13,6 +14,8 @@
 pid_t g_pidLastChildProc = 0;
 pid_t g_pidChildPids[MAX_CHILD_PROCESSES] = {0};
 uint16_t g_uiPIDIndex = 0;
+
+void (*AppExit)();
 
 void OnExit(int iSigNum);
 static void RunApp(const char* strLibPath);
@@ -66,6 +69,10 @@ exit:
 
 void OnExit(int iSigNum)
 {
+    if(g_pidLastChildProc == 0)
+    {
+        AppExit();
+    }
     size_t sPidSize = sizeof(g_pidChildPids)/sizeof(g_pidChildPids[0]);
     for(uint16_t i = 0; i < sPidSize && g_pidChildPids[i] > 0; i++)
     {
@@ -96,6 +103,7 @@ static void RunApp(const char* strLibPath)
             void (*apiInit)() = (void (*)()) dlsym(handle, "LiteFS_ApiInit");
             apiInit();
             appAPI->LiteFS_AppInit();
+            AppExit = appAPI->LiteFS_AppExit;
             appAPI->LiteFS_AppRun();
         }
         else

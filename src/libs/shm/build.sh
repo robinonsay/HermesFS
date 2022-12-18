@@ -1,3 +1,6 @@
+#!/bin/bash
+CC="gcc"
+
 RESET="\033[0m"
 BLACK="\033[0;30m"
 RED="\033[0;31m"
@@ -65,7 +68,7 @@ LIB_DEFINES=
 echo -e ${YELLOW}~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~${RESET}
 echo -e "${BOLD_GREEN}Building ${GREEN}(${LIB_NAME})${BOLD_GREEN}...${RESET}"
 
-gcc ${LIB_COMPILE_FLAGS} ${LIB_DEFINES} ${LIB_INCLUDES} -fPIC -o ${OUT} ${LIB_SOURCES} ${LIB_LINKER_FLAGS} ${LIB_LINKER_DIRS} ${LIB_LINKER_LIBS}
+${CC} ${LIB_COMPILE_FLAGS} ${LIB_DEFINES} ${LIB_INCLUDES} -fPIC -o ${OUT} ${LIB_SOURCES} ${LIB_LINKER_FLAGS} ${LIB_LINKER_DIRS} ${LIB_LINKER_LIBS}
 STATUS=$?
 if [[ ${STATUS} -ne 0 ]]; then
     echo -e ${BOLD_RED}Build FAILED${RESET}
