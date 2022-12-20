@@ -1,20 +1,20 @@
-#ifndef LITEFS_HMAP_H
-#define LITEFS_HMAP_H
+#ifndef HERMES_HMAP_H
+#define HERMES_HMAP_H
 
-#define LITEFS_HMAP_SUCCESS (0)
-#define LITEFS_HMAP_ERROR   (-1)
+#define HERMES_HMAP_SUCCESS (0)
+#define HERMES_HMAP_ERROR   (-1)
 
-typedef struct LITEFS_HMAP_ITEM_TAG
+typedef struct HERMES_HMAP_ITEM_TAG
 {
     unsigned long                   ulKeyHash;
     void*                           vValuePtr;
-    struct LITEFS_HMAP_ITEM_TAG*    nextItemPtr;
-    struct LITEFS_HMAP_ITEM_TAG*    prevItemPtr;
-} LITEFS_HMAP_ITEM_T;
+    struct HERMES_HMAP_ITEM_TAG*    nextItemPtr;
+    struct HERMES_HMAP_ITEM_TAG*    prevItemPtr;
+} HERMES_HMAP_ITEM_T;
 
-typedef struct LITEFS_HMAP_TAG
+typedef struct HERMES_HMAP_TAG
 {
-    LITEFS_HMAP_ITEM_T* itemTbl;
+    HERMES_HMAP_ITEM_T* itemTbl;
     unsigned long       ulItemTblSize;
     unsigned long       ulItemTblLen;
     struct
@@ -22,18 +22,18 @@ typedef struct LITEFS_HMAP_TAG
         unsigned long ulSize;
         unsigned long ulLen;
     } state;
-} LITEFS_HMAP_T;
+} HERMES_HMAP_T;
 
-void LiteFS_HmapInit(LITEFS_HMAP_T* hmapPtr, LITEFS_HMAP_ITEM_T itemTbl[], unsigned long ulItemTblSize);
-void* LiteFS_HmapGet(LITEFS_HMAP_T* hmapPtr, void* keyPtr, unsigned long ulKeySize);
-int LiteFS_HmapSet(LITEFS_HMAP_T* hmapPtr, void* keyPtr, unsigned long ulKeySize, void* valPtr);
-void LiteFS_HmapRemove(LITEFS_HMAP_T* hmapPtr, void* keyPtr, unsigned long ulKeySize);
-unsigned long LiteFS_HashStr(char* str);
-unsigned long LiteFS_HashArr(unsigned char byteArr[], unsigned long ulByteArrSize);
+void Hermes_HmapInit(HERMES_HMAP_T* hmapPtr, HERMES_HMAP_ITEM_T itemTbl[], unsigned long ulItemTblSize);
+void* Hermes_HmapGet(HERMES_HMAP_T* hmapPtr, void* keyPtr, unsigned long ulKeySize);
+int Hermes_HmapSet(HERMES_HMAP_T* hmapPtr, void* keyPtr, unsigned long ulKeySize, void* valPtr);
+void Hermes_HmapRemove(HERMES_HMAP_T* hmapPtr, void* keyPtr, unsigned long ulKeySize);
+unsigned long Hermes_HashStr(char* str);
+unsigned long Hermes_HashArr(unsigned char byteArr[], unsigned long ulByteArrSize);
 
-#endif /* LITEFS_HMAP_H */
+#endif /* HERMES_HMAP_H */
 
-#ifdef LITEFS_HMAP_SET_POLY8
+#ifdef HERMES_HMAP_SET_POLY8
 unsigned long g_uiPoly8Lookup[256] =
 {
  0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA,

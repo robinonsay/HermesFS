@@ -49,14 +49,14 @@ fi
 
 LIB_NAME=shm
 LIB_INCLUDES="-I../shm"
-LIB_SOURCES="../shm/litefs_shm.linux.c"
+LIB_SOURCES="../shm/hermes_shm.linux.c"
 
 if [[ ${SHARED} ]]; then
     LIB_COMPILE_FLAGS="-shared"
-    OUT=${OUT_DIR}/liblitefs_${LIB_NAME}.so
+    OUT=${OUT_DIR}/libhermes_${LIB_NAME}.so
 else
     LIB_COMPILE_FLAGS="-c"
-    OUT=${OUT_DIR}/litefs_${LIB_NAME}.o
+    OUT=${OUT_DIR}/hermes_${LIB_NAME}.o
 
 fi
 LIB_COMPILE_FLAGS+=" --debug -std=gnu99 -pedantic -Werror"

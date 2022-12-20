@@ -35,7 +35,7 @@ rm ${PROJECT_DIR}/out/manifest
 SRCS="$(ls -d libs/*)"
 SRCS+=" $(ls -d core/*)"
 echo -e ${BOLD_PURPLE}------------------------------------------------------------------------------------${RESET}
-echo -e ${BOLD_PURPLE}Building LiteFS Libs...${RESET}
+echo -e ${BOLD_PURPLE}Building Hermes Libs...${RESET}
 echo -e ${BOLD_PURPLE}------------------------------------------------------------------------------------${RESET}
 for lib in ${SRCS}; do
     cd ${lib} && ./build.sh -o ${PROJECT_DIR}/out
@@ -69,9 +69,9 @@ for app_path in $MANIFEST; do
     cd ${PROJECT_DIR}/src
 done
 
-SOURCES="${PROJECT_DIR}/src/litefs.linux.c"
+SOURCES="$(ls -d app/*)"
 OBJS=$(ls ${PROJECT_DIR}/out/*.o)
-OUT="${PROJECT_DIR}/out/litefs"
+OUT="${PROJECT_DIR}/out/hermes"
 INCLUDES="-I${PROJECT_DIR}/src"
 INCLUDES+=" -I${PROJECT_DIR}/api"
 COMPILE_FLAGS="--debug -std=gnu99 -pedantic -Werror"
@@ -80,7 +80,7 @@ LINKER_DIRS=
 LINKER_LIBS="-ldl"
 DEFINES=
 echo -e ${BOLD_PURPLE}------------------------------------------------------------------------------------${RESET}
-echo -e ${BOLD_PURPLE}Building LiteFS...${RESET}
+echo -e ${BOLD_PURPLE}Building Hermes...${RESET}
 echo -e ${BOLD_PURPLE}------------------------------------------------------------------------------------${RESET}
 ${CC} ${COMPILE_FLAGS} ${DEFINES} ${INCLUDES} -fPIC -o ${OUT} ${SOURCES} ${OBJS} ${LINKER_FLAGS} ${LINKER_DIRS} ${LINKER_LIBS}
 STATUS=$?

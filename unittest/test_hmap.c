@@ -1,4 +1,4 @@
-#include "utils/litefs_hmap.h"
+#include "utils/hermes_hmap.h"
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -6,9 +6,9 @@
 static bool TestHMapSetAndGet()
 {
     bool bPass = true;
-    LITEFS_HMAP_T hmap = {0};
-    LITEFS_HMAP_ITEM_T itemTbl[4] = {0};
-    LiteFS_HmapInit(&hmap, itemTbl, sizeof(itemTbl));
+    HERMES_HMAP_T hmap = {0};
+    HERMES_HMAP_ITEM_T itemTbl[4] = {0};
+    Hermes_HmapInit(&hmap, itemTbl, sizeof(itemTbl));
     int values[4] = {0};
     values[0] = 69420;
     values[1] = 666;
@@ -22,8 +22,8 @@ static bool TestHMapSetAndGet()
     };
     for(int i = 0; i < 4; i++)
     {
-        LiteFS_HmapSet(&hmap, keyStr[i], sizeof(keyStr[i]), &values[i]);
-        int* iValPtr = (int*) LiteFS_HmapGet(&hmap, keyStr, sizeof(keyStr[i]));
+        Hermes_HmapSet(&hmap, keyStr[i], sizeof(keyStr[i]), &values[i]);
+        int* iValPtr = (int*) Hermes_HmapGet(&hmap, keyStr, sizeof(keyStr[i]));
         bPass = bPass && (values[0] == *iValPtr);
     }
     if(!bPass)
