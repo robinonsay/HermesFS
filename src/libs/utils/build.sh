@@ -49,14 +49,14 @@ fi
 
 LIB_NAME=utils
 LIB_INCLUDES="-I../utils"
-LIB_SOURCES="../utils/litefs_hmap.c"
+LIB_SOURCES="../utils/hermes_hmap.c"
 
 if [[ ${SHARED} ]]; then
     LIB_COMPILE_FLAGS="-shared"
-    OUT=${OUT_DIR}/liblitefs_${LIB_NAME}.so
+    OUT=${OUT_DIR}/libhermes_${LIB_NAME}.so
 else
     LIB_COMPILE_FLAGS="-c"
-    OUT=${OUT_DIR}/litefs_${LIB_NAME}.o
+    OUT=${OUT_DIR}/hermes_${LIB_NAME}.o
 
 fi
 LIB_COMPILE_FLAGS+=" --debug -std=gnu99 -pedantic -Werror"

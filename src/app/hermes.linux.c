@@ -1,5 +1,5 @@
-#include "litefs.h"
-#include "litefsapp.h"
+#include "hermes.h"
+#include "hermes_app.h"
 #include <dlfcn.h>
 #include <unistd.h>
 #include <string.h>
@@ -11,11 +11,10 @@
 #define PATH_SIZE           (1024)
 #define MAX_CHILD_PROCESSES (256)
 
-pid_t g_pidLastChildProc = 0;
-pid_t g_pidChildPids[MAX_CHILD_PROCESSES] = {0};
-uint16_t g_uiPIDIndex = 0;
-
-void (*AppExit)();
+HERMES_API_T gAppApi = {0};
+pid_t gPidLastChildProc = 0;
+pid_t gPidChildPids[MAX_CHILD_PROCESSES] = {0};
+uint16_t guiPIDIndex = 0;
 
 void OnExit(int iSigNum);
 static void RunApp(const char* strLibPath);
@@ -23,27 +22,27 @@ static void MainProcess();
 
 int main(int argc, char const *argv[])
 {
-    int iStatus = LITEFS_SUCCESS;
+    int iStatus = HERMES_SUCCESS;
     struct sigaction sigHandler;
     sigHandler.sa_handler = OnExit;
     if(sigaction(SIGINT, &sigHandler, NULL))
     {
-        perror("LITEFS ERROR: Cannot set sig handler");
-        iStatus = LITEFS_ERROR;
+        perror("HERMES ERROR: Cannot set sig handler");
+        iStatus = HERMES_ERROR;
         goto exit;
     }
     FILE* fileManifestPtr = fopen(MAINFEST_PATH, "r");
     if(fileManifestPtr == NULL)
     {
-        perror("LITEFS ERROR: Cannot open file");
-        iStatus = LITEFS_ERROR;
+        perror("HERMES ERROR: Cannot open file");
+        iStatus = HERMES_ERROR;
         goto exit;
     }
     char strLibPath[PATH_SIZE] = {0};
     uint16_t uiCounter = 0;
     while(fgets(strLibPath, sizeof(strLibPath), fileManifestPtr) != NULL)
     {
-        if(g_uiPIDIndex < sizeof(g_pidChildPids)/sizeof(g_pidChildPids[0]))
+        if(guiPIDIndex < sizeof(gPidChildPids)/sizeof(gPidChildPids[0]))
         {
             size_t sLastChar = strlen(strLibPath) - 1;
             if(strLibPath[sLastChar] == '\n')
@@ -56,7 +55,7 @@ int main(int argc, char const *argv[])
         }
         else
         {
-            printf("LITEFS ERROR: Cannot run, too many apps listed\n");
+            printf("HERMES ERROR: Cannot run, too many apps listed\n");
             OnExit(0);
             break;
         }
@@ -69,14 +68,15 @@ exit:
 
 void OnExit(int iSigNum)
 {
-    if(g_pidLastChildProc == 0)
+    if(gPidLastChildProc == 0)
     {
-        AppExit();
+        printf("\nClosing %s\n", gAppApi.strAppName);
+        gAppApi.Hermes_AppExit();
     }
-    size_t sPidSize = sizeof(g_pidChildPids)/sizeof(g_pidChildPids[0]);
-    for(uint16_t i = 0; i < sPidSize && g_pidChildPids[i] > 0; i++)
+    size_t sPidSize = sizeof(gPidChildPids)/sizeof(gPidChildPids[0]);
+    for(uint16_t i = 0; i < sPidSize && gPidChildPids[i] > 0; i++)
     {
-        kill(g_pidChildPids[i], SIGINT);
+        kill(gPidChildPids[i], SIGINT);
     }
     exit(0);
 }
@@ -89,22 +89,22 @@ static void RunApp(const char* strLibPath)
         printf("Could not load dll\n");
     }else
     {
-        g_pidLastChildProc = fork();
-        if(g_pidLastChildProc > 0)
+        gPidLastChildProc = fork();
+        if(gPidLastChildProc > 0)
         {
-            printf("LITEFS LOG: Closing handle\n");
+            printf("HERMES LOG: Closing handle\n");
             dlclose(handle);
-            g_pidChildPids[g_uiPIDIndex] = g_pidLastChildProc;
-            g_uiPIDIndex++;
+            gPidChildPids[guiPIDIndex] = gPidLastChildProc;
+            guiPIDIndex++;
+            printf("App PID: [%i]\n", gPidLastChildProc);
         }
-        else if(g_pidLastChildProc == 0)
+        else if(gPidLastChildProc == 0)
         {
-            LITEFS_API_T* appAPI = (LITEFS_API_T*) dlsym(handle, "gLiteFS_AppAPI");
-            void (*apiInit)() = (void (*)()) dlsym(handle, "LiteFS_ApiInit");
-            apiInit();
-            appAPI->LiteFS_AppInit();
-            AppExit = appAPI->LiteFS_AppExit;
-            appAPI->LiteFS_AppRun();
+            void (*AppApiInit)(HERMES_API_T* apiPtr) = (void (*)(HERMES_API_T*)) dlsym(handle, "Hermes_RegisterApp");
+            AppApiInit(&gAppApi);
+            printf("Starting %s\n", gAppApi.strAppName);
+            gAppApi.Hermes_AppInit();
+            gAppApi.Hermes_AppRun();
         }
         else
         {
