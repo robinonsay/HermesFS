@@ -38,13 +38,14 @@ echo -e ${BOLD_PURPLE}----------------------------------------------------------
 echo -e ${BOLD_PURPLE}Building Hermes Libs...${RESET}
 echo -e ${BOLD_PURPLE}------------------------------------------------------------------------------------${RESET}
 for lib in ${SRCS}; do
-    cd ${lib} && ./build.sh -o ${PROJECT_DIR}/out
+    cd ${lib} && ./build.sh -s -o ${PROJECT_DIR}/out
     STATUS=$?
     cd ${PROJECT_DIR}/src
     if [ ${STATUS} -ne 0 ]; then
         exit 1
     fi
 done
+DLLS="$(ls ${PROJECT_DIR}/out/*.so)"
 
 source ${PROJECT_DIR}/mission.conf
 STATUS=$?
@@ -69,15 +70,15 @@ for app_path in $MANIFEST; do
     cd ${PROJECT_DIR}/src
 done
 
-SOURCES="$(ls -d app/*)"
-OBJS=$(ls ${PROJECT_DIR}/out/*.o)
+SOURCES="$(ls app/*.linux.c)"
 OUT="${PROJECT_DIR}/out/hermes"
 INCLUDES="-I${PROJECT_DIR}/src"
 INCLUDES+=" -I${PROJECT_DIR}/api"
+INCLUDES+=" -I${PROJECT_DIR}/src/libs"
 COMPILE_FLAGS="--debug -std=gnu99 -pedantic -Werror"
-LINKER_FLAGS=
-LINKER_DIRS=
-LINKER_LIBS="-ldl"
+LINKER_FLAGS="-Wl,-rpath,${PROJECT_DIR}/out"
+LINKER_DIRS="-L${PROJECT_DIR}/out"
+LINKER_LIBS="-ldl -lhermes_sbn -lhermes_shm -lhermes_utils"
 DEFINES=
 echo -e ${BOLD_PURPLE}------------------------------------------------------------------------------------${RESET}
 echo -e ${BOLD_PURPLE}Building Hermes...${RESET}

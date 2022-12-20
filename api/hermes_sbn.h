@@ -4,11 +4,46 @@
 #define HERMES_SBN_SUCCESS  (0)
 #define HERMES_SBN_ERROR    (-1)
 
-typedef struct HERMES_SBN_APP_CNTXT_TAG HERMES_SBN_APP_CNTXT_T;
+#ifndef HERMES_SBN_PIPE_DEPTH
+#define HERMES_SBN_PIPE_DEPTH   (32)
+#endif /* HERMES_SBN_PIPE_DEPTH */
 
-int Hermes_SbnInit(HERMES_SBN_APP_CNTXT_T* sbnPtr, char strAppName[]);
-int Hermes_SbnSubscribe(HERMES_SBN_APP_CNTXT_T* sbnPtr, const char strAppName[], unsigned long ulMid);
-void Hermes_SbnPublish(HERMES_SBN_APP_CNTXT_T* sbnPtr, void* msgPtr, unsigned long ulMsgSize);
-void* Hermes_SbnGetMsg(HERMES_SBN_APP_CNTXT_T* sbnPtr, const char strAppName[], unsigned long ulMid);
+#ifndef HERMES_SBN_PIPE_SIZE
+#define HERMES_SBN_PIPE_SIZE    (0x8000)
+#endif /* HERMES_SBN_PIPE_SIZE */
+
+#ifndef HERMES_SBN_OUTBOX_SIZE
+#define HERMES_SBN_OUTBOX_SIZE  (0x8000)
+#endif /* HERMES_SBN_OUTBOX_SIZE */
+
+#define HERMES_SBN_SIZE         (HERMES_SBN_OUTBOX_SIZE + HERMES_SBN_PIPE_SIZE)
+
+#include "shm/hermes_shm.h"
+
+typedef struct HERMES_SBN_ITEM_TAG HERMES_SBN_ITEM_T;
+typedef struct HERMES_SBN_TAG
+{
+    struct
+    {
+        unsigned long           ulLength;
+        unsigned long           ulSize;
+        HERMES_SBN_ITEM_T*      startPtr;
+        HERMES_SBN_ITEM_T*      endPtr;
+    } pipe;
+    struct
+    {
+        unsigned long           ulLength;
+        unsigned long           ulSize;
+        HERMES_SBN_ITEM_T*      startPtr;
+        HERMES_SBN_ITEM_T*      endPtr;
+    } outbox;
+    HERMES_SHM_CONTEXT_T    shmCntxt;
+} HERMES_SBN_T;
+
+
+int Hermes_SbnInit(HERMES_SBN_T* sbnPtr, char strAppName[]);
+int Hermes_SbnPublish(HERMES_SBN_T* sbnPtr, void* srcPtr, unsigned long ulSrcSize);
+int Hermes_SbnDequeueOutbox(HERMES_SBN_T* sbnPtr, void* destPtr);
+void Hermes_SbnClose(HERMES_SBN_T* sbnPtr);
 
 #endif /* HERMES_SBN_H */
