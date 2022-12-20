@@ -1,5 +1,6 @@
 #include "hermes.h"
 #include "hermes_app.h"
+#include "hermes_sbn.h"
 #include <dlfcn.h>
 #include <unistd.h>
 #include <string.h>
@@ -11,13 +12,22 @@
 #define PATH_SIZE           (1024)
 #define MAX_CHILD_PROCESSES (256)
 
+typedef struct GLOBALS_TAG
+{
+    char    strAppName[PATH_SIZE];
+    HERMES_SBN_T sbn;
+} GLOBALS_T;
+
+GLOBALS_T gGlobals = {0};
 HERMES_API_T gAppApi = {0};
 pid_t gPidLastChildProc = 0;
 pid_t gPidChildPids[MAX_CHILD_PROCESSES] = {0};
 uint16_t guiPIDIndex = 0;
 
+
 void OnExit(int iSigNum);
 static void RunApp(const char* strLibPath);
+static int MainInit();
 static void MainProcess();
 
 int main(int argc, char const *argv[])
@@ -59,8 +69,9 @@ int main(int argc, char const *argv[])
             OnExit(0);
             break;
         }
-        MainProcess();
     }
+    MainInit();
+    MainProcess();
 
 exit:
     return iStatus;
@@ -72,6 +83,10 @@ void OnExit(int iSigNum)
     {
         printf("\nClosing %s\n", gAppApi.strAppName);
         gAppApi.Hermes_AppExit();
+    }
+    else
+    {
+        Hermes_SbnClose(&gGlobals.sbn);
     }
     size_t sPidSize = sizeof(gPidChildPids)/sizeof(gPidChildPids[0]);
     for(uint16_t i = 0; i < sPidSize && gPidChildPids[i] > 0; i++)
@@ -113,11 +128,22 @@ static void RunApp(const char* strLibPath)
     }
 }
 
+static int MainInit()
+{
+    strcpy(gGlobals.strAppName, "SampleApp");
+    int iStatus = Hermes_SbnInit(&gGlobals.sbn, gGlobals.strAppName);
+    return iStatus;
+}
+
 static void MainProcess()
 {
     while(true)
     {
-        printf("Main Process\n");
-        sleep(2);
+        char str[PATH_SIZE] = {0};
+        while(Hermes_SbnDequeueOutbox(&gGlobals.sbn, str) == HERMES_SBN_SUCCESS)
+        {
+            printf("Recvd Data: %s\n", str);
+        }
+        sleep(1);
     }
 }
