@@ -7,6 +7,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>        /* For mode constants */
 #include <fcntl.h>           /* For O_* constants */
+#include <string.h>
 
 struct HERMES_SHM_LOCKS_TAG
 {
@@ -26,22 +27,26 @@ int Hermes_ShmInit(HERMES_SHM_CONTEXT_T* shmCntxtPtr, const char* strShmName, un
     if(iShmFd == -1)
     {
         iStatus = HERMES_SHM_ERROR;
+        perror("SHM ERROR: Could not open shared memory");
         goto exit;
     }
     shmCntxtPtr->ulSizeShm = ulSizeShm + sizeof(HERMES_SHM_LOCKS_T);
-    if(!ftruncate(iShmFd, shmCntxtPtr->ulSizeShm))
+    if(ftruncate(iShmFd, shmCntxtPtr->ulSizeShm))
     {
+        perror("SHM ERROR: Could not truncate shared memory");
         iStatus = HERMES_SHM_ERROR;
         goto exit;
     }
-    shmCntxtPtr->vShmPtr = mmap(NULL, shmCntxtPtr->ulSizeShm, PROT_EXEC | PROT_READ | PROT_WRITE, MAP_SHARED, iShmFd, 0);
+    shmCntxtPtr->vShmPtr = mmap(NULL, shmCntxtPtr->ulSizeShm, PROT_READ | PROT_WRITE, MAP_SHARED, iShmFd, 0);
     if(shmCntxtPtr->vShmPtr == MAP_FAILED)
     {
+        perror("SHM ERROR: Could not map shared memory");
         iStatus = HERMES_SHM_ERROR;
         goto exit;
     }
     shmCntxtPtr->strShmName = strShmName;
-    shmCntxtPtr->lockPtr = (HERMES_SHM_LOCKS_T*) ((uint8_t*) shmCntxtPtr->vShmPtr) + ulSizeShm;
+    shmCntxtPtr->lockPtr = (HERMES_SHM_LOCKS_T*) ((uint8_t*) shmCntxtPtr->vShmPtr + ulSizeShm);
+    memset(shmCntxtPtr->lockPtr, 0, sizeof(HERMES_SHM_LOCKS_T));
 exit:
     if(iShmFd != -1)
     {
@@ -52,6 +57,7 @@ exit:
 
 void Hermes_ShmClose(HERMES_SHM_CONTEXT_T* shmCntxtPtr)
 {
+    Hermes_ShmWLck(shmCntxtPtr);
     if(!munmap(shmCntxtPtr->vShmPtr, shmCntxtPtr->ulSizeShm))
     {
         shm_unlink(shmCntxtPtr->strShmName);
@@ -79,7 +85,7 @@ void Hermes_ShmRLck(HERMES_SHM_CONTEXT_T* shmCntxtPtr)
     ClearLck(&shmCntxtPtr->lockPtr->uiRLck);
 }
 
-void Hermes_ShmRUnLck(HERMES_SHM_CONTEXT_T* shmCntxtPtr)
+void Hermes_ShmRUnlck(HERMES_SHM_CONTEXT_T* shmCntxtPtr)
 {
     SpinLck(&shmCntxtPtr->lockPtr->uiRLck);
     shmCntxtPtr->lockPtr->uiNumRdrs--;
