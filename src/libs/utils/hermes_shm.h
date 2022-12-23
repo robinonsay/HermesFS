@@ -19,6 +19,6 @@ void Hermes_ShmClose(HERMES_SHM_CONTEXT_T* shmCntxtPtr);
 void Hermes_ShmWLck(HERMES_SHM_CONTEXT_T* shmCntxtPtr);
 void Hermes_ShmWUnlck(HERMES_SHM_CONTEXT_T* shmCntxtPtr);
 void Hermes_ShmRLck(HERMES_SHM_CONTEXT_T* shmCntxtPtr);
-void Hermes_ShmRUnLck(HERMES_SHM_CONTEXT_T* shmCntxtPtr);
+void Hermes_ShmRUnlck(HERMES_SHM_CONTEXT_T* shmCntxtPtr);
 
 #endif /* HERMES_SHM_H */
