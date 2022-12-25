@@ -25,9 +25,10 @@ int Hermes_SbnInit(HERMES_SBN_T* sbnPtr, char strAppName[])
     sbnPtr->pipeOut.startPtr = (unsigned char*)(sbnPtr->pipeOut.hdrPtr + 1);
     sbnPtr->pipeOut.endPtr = sbnPtr->pipeOut.startPtr + HERMES_SBN_OUT_PIPE_SIZE;
     HERMES_SBN_HEADER_T hdrZero = {0};
+    HERMES_SBN_ITEM_T itemZero = {0};
     Hermes_ShmWLck(&sbnPtr->shmCntxt);
     memcpy(sbnPtr->pipeOut.hdrPtr, &hdrZero, sizeof(hdrZero));
-    memset(sbnPtr->pipeOut.startPtr, 0, HERMES_SBN_OUT_PIPE_SIZE);
+    memcpy(sbnPtr->pipeOut.startPtr, &itemZero, sizeof(itemZero));
     Hermes_ShmWUnlck(&sbnPtr->shmCntxt);
     return iStatus;
 }
@@ -37,39 +38,38 @@ int Hermes_SbnPublish(HERMES_SBN_T* sbnPtr, void* srcPtr, unsigned long ulSrcSiz
     int iStatus = HERMES_SBN_ERROR;
     HERMES_SBN_HEADER_T* hdrPtr = sbnPtr->pipeOut.hdrPtr;
     HERMES_SBN_ITEM_T* lastItemPtr = NULL;
-    HERMES_SBN_ITEM_T* nextItemPtr = NULL;
-    unsigned long ulOffst = 0;
+    HERMES_SBN_ITEM_T* newItemPtr = NULL;
     unsigned long ulItemSize = ulSrcSize + sizeof(HERMES_SBN_ITEM_T);
     Hermes_ShmWLck(&sbnPtr->shmCntxt);
-    printf("PUB\n");
-    if(hdrPtr->ulPipeSize + ulItemSize <= HERMES_SBN_OUT_PIPE_SIZE)
+    lastItemPtr = (HERMES_SBN_ITEM_T*)(sbnPtr->pipeOut.startPtr + hdrPtr->ulBackItemOffst);
+    if(hdrPtr->ulPipeSize == 0 && hdrPtr->ulBackItemOffst + ulItemSize < HERMES_SBN_OUT_PIPE_SIZE)
     {
-        lastItemPtr = (HERMES_SBN_ITEM_T*)(sbnPtr->pipeOut.startPtr + hdrPtr->ulBackItemOffst);
-        if(lastItemPtr->ulNextItemOffst + ulItemSize < HERMES_SBN_OUT_PIPE_SIZE)
-        {
-            ulOffst = lastItemPtr->ulNextItemOffst + ulItemSize;
-            nextItemPtr = (HERMES_SBN_ITEM_T*)(sbnPtr->pipeOut.startPtr + lastItemPtr->ulNextItemOffst);
-        }
-        else if(ulItemSize < hdrPtr->ulFrontItemOffst)
-        {
-            ulOffst = ulItemSize;
-            nextItemPtr = (HERMES_SBN_ITEM_T*) (sbnPtr->pipeOut.startPtr);
-        }
-        else
-        {
-            nextItemPtr = NULL;
-        }
+        newItemPtr = lastItemPtr;
+        hdrPtr->ulFrontItemOffst = hdrPtr->ulBackItemOffst;
     }
-    if(lastItemPtr && nextItemPtr)
+    else if(hdrPtr->ulPipeSize + ulItemSize < HERMES_SBN_OUT_PIPE_SIZE && lastItemPtr->ulNextItemOffst + ulItemSize < HERMES_SBN_OUT_PIPE_SIZE)
     {
-        void* destPtr = nextItemPtr + 1;
-        nextItemPtr->ulDataSize = ulSrcSize;
-        nextItemPtr->ulNextItemOffst = ulOffst;
-        hdrPtr->ulPipeSize += ulItemSize;
+        hdrPtr->ulBackItemOffst = lastItemPtr->ulNextItemOffst;
+        newItemPtr = (HERMES_SBN_ITEM_T*)(sbnPtr->pipeOut.startPtr + hdrPtr->ulBackItemOffst);
+        
+    }
+    else if(hdrPtr->ulPipeSize + ulItemSize < HERMES_SBN_OUT_PIPE_SIZE)
+    {
+        newItemPtr = (HERMES_SBN_ITEM_T*)sbnPtr->pipeOut.startPtr;
+        hdrPtr->ulBackItemOffst = 0;
+    }
+    else
+    {
+        iStatus = HERMES_SBN_ERROR;
+    }
+    if(lastItemPtr && newItemPtr)
+    {
+        void* destPtr = newItemPtr + 1;
         memcpy(destPtr, srcPtr, ulSrcSize);
-        iStatus = HERMES_SBN_SUCCESS;
+        newItemPtr->ulDataSize = ulSrcSize;
+        newItemPtr->ulNextItemOffst = hdrPtr->ulBackItemOffst + ulItemSize;
+        hdrPtr->ulPipeSize += ulItemSize;
     }
-    printf("FRONT_ITEM: %lu, BACK_ITEM: %lu\n", hdrPtr->ulFrontItemOffst, hdrPtr->ulBackItemOffst);
     Hermes_ShmWUnlck(&sbnPtr->shmCntxt);
     return iStatus;
 }
@@ -79,18 +79,13 @@ int Hermes_SbnDequeue(HERMES_SBN_T* sbnPtr, HERMES_SBN_PIPE_T* pipePtr, void* de
     int iStatus = HERMES_SBN_ERROR;
     Hermes_ShmWLck(&sbnPtr->shmCntxt);
     HERMES_SBN_ITEM_T* firstItem = (HERMES_SBN_ITEM_T*)(pipePtr->startPtr + pipePtr->hdrPtr->ulFrontItemOffst);
-    if(firstItem->ulDataSize > 0 && firstItem->ulDataSize < destSize)
+    if(firstItem->ulDataSize > 0 && firstItem->ulDataSize < destSize && pipePtr->hdrPtr->ulPipeSize > 0)
     {
         void* srcPtr = firstItem + 1;
         memcpy(destPtr, srcPtr, firstItem->ulDataSize);
-        iStatus = HERMES_SBN_SUCCESS;
-    }
-    if(iStatus == HERMES_SBN_SUCCESS)
-    {
         pipePtr->hdrPtr->ulPipeSize -= (firstItem->ulDataSize + sizeof(HERMES_SBN_ITEM_T));
         pipePtr->hdrPtr->ulFrontItemOffst = firstItem->ulNextItemOffst;
-        firstItem->ulDataSize = 0;
-        firstItem->ulNextItemOffst = 0;
+        iStatus = HERMES_SBN_SUCCESS;
     }
     Hermes_ShmWUnlck(&sbnPtr->shmCntxt);
     return iStatus;

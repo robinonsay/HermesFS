@@ -112,7 +112,7 @@ static int IOClose(int fd)
 
 static void SpinLck(volatile uint8_t* uiLck)
 {
-    while(__atomic_test_and_set(uiLck, __ATOMIC_RELAXED));
+    while(!__atomic_test_and_set(uiLck, __ATOMIC_RELAXED));
 }
 
 static void ClearLck(volatile uint8_t* uiLck)

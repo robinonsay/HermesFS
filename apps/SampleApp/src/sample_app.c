@@ -37,11 +37,11 @@ static int Hermes_SampleAppInit()
 static int Hermes_SampleAppRun()
 {
     unsigned long ulCounter = 0;
-    char strData[256] = {0};
+    char strData[512] = {0};
     while(true)
     {
         sprintf(strData, "Sample App Says Hello %lu", ulCounter);
-        Hermes_SbnPublish(&gAppData.sbn, strData, strlen(strData));
+        Hermes_SbnPublish(&gAppData.sbn, strData, sizeof(strData));
         ulCounter++;
         sleep(1);
     }
